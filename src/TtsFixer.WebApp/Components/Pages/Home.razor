@@ -1,0 +1,69 @@
+﻿@namespace TtsFixer.WebApp.Pages
+
+@attribute [RouteAttribute(RouteTemplate.Index)]
+
+@inject IRuleRepository RuleRepository
+@inject IDialogService DialogService
+
+<PageTitle>TTS Fixer</PageTitle>
+
+<MudStack Class="h-100 py-4 h-100">
+    <MudPaper Class="pa-4">
+        <MudStack Spacing="2" AlignItems="@AlignItems.Center">
+            <MudText Typo="Typo.h4" Class="fw-bold">Text-To-Speach Normalizer</MudText>
+            <MudText Typo="Typo.body2" Class="text-secondary px-8 py-4">
+                Create and toggle text transformation rules to clean, normalize, and fix pronunciation before text-to-speech output.
+            </MudText>
+            <MudFileUpload T="IBrowserFile">
+                <ActivatorContent>
+                    <MudButton Variant="Variant.Filled"
+                               Color="Color.Primary"
+                               StartIcon="@Icons.Material.Filled.CloudUpload">
+                        Upload
+                    </MudButton>
+                </ActivatorContent>
+            </MudFileUpload>
+        </MudStack>
+    </MudPaper>
+
+    <MudToolBar>
+
+    </MudToolBar>
+    <MudElement HtmlTag="div" Class="h-100">
+        @foreach(var item in Items)
+        {
+            
+        }
+    </MudElement>
+</MudStack>
+
+@code {
+    private IEnumerable<CustomRule> Items { get; set; } = [];
+
+    protected override void OnInitialized()
+    {
+        base.OnInitialized();
+
+        Items = RuleRepository.GetRules();
+    }
+
+    private async void AddRule()
+    {
+        var parameters = new DialogParameters
+        {
+            { "Rule", new CustomRule { Identifier = Guid.NewGuid() } }
+        };
+
+        var options = new DialogOptions
+        {
+            CloseButton = true,
+            MaxWidth = MaxWidth.Small,
+            FullWidth = true,
+            BackdropClick = false,
+        };
+
+        await DialogService.ShowAsync<RuleDialog>("Add Rule", parameters, options);
+
+        Items = RuleRepository.GetRules();
+    }
+}

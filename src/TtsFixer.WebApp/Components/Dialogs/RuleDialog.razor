@@ -1,0 +1,52 @@
+﻿@namespace TtsFixer.WebApp.Components.Dialogs
+
+@using System.Diagnostics.CodeAnalysis
+
+@inject IRuleRepository RuleRepository
+
+<MudDialog>
+    <DialogContent>
+        <MudStack Spacing="2">
+            <MudTextField @bind-Value="@Rule.Name" Label="Name"/>
+            <MudTextField @bind-Value="@Rule.Description" Label="Description"/>
+            <MudNumericField @bind-Value="@Rule.Prioity" Label="Prioity"/>
+
+            <MudStack Row="true">
+                <MudSwitch @bind-Value="@Rule.UseRegex" Label="Use Regex" ReadOnly="@Rule.CaseSensetive" />
+                <MudSwitch @bind-Value="@Rule.CaseSensetive" Label="Case Sensetive" ReadOnly="@Rule.UseRegex" />
+            </MudStack>
+
+            <MudTextField @bind-Value="@Rule.Pattern" Label="Pattern" />
+            <MudTextField @bind-Value="@Rule.Replacement" Label="Replacement" />
+        </MudStack>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Close">Cancel</MudButton>
+        <MudButton Color="Color.Success" OnClick="Save">Save</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter, AllowNull]
+    private IMudDialogInstance MudDialog { get; set; }
+
+    [Parameter]
+    public CustomRule Rule { get; set; } = new()
+    {
+        CreatedAt = DateTime.UtcNow,
+    };
+
+    private void Close() => MudDialog.Close(DialogResult.Ok(true));
+
+    private void Save()
+    {
+        if (Rule.Identifier == default)
+        {
+            Rule.Identifier = Guid.NewGuid();
+        }
+
+        RuleRepository.SetRule(Rule);
+
+        this.Close();
+    }
+}

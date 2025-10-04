@@ -1,0 +1,55 @@
+<Project>
+  <!--
+    Directory.Build.props
+    Shared build settings for all projects in the solution.
+    Applies Microsoft coding conventions, nullable safety, and analyzer rules.
+  -->
+
+  <PropertyGroup>
+    <!-- Target framework for all projects -->
+    <TargetFramework>net9.0</TargetFramework>
+
+    <!-- Enable nullable reference types -->
+    <Nullable>enable</Nullable>
+
+    <!-- Enable implicit using directives -->
+    <ImplicitUsings>enable</ImplicitUsings>
+
+    <!-- Use the latest available C# language features -->
+    <LangVersion>latest</LangVersion>
+
+    <!-- Treat all warnings as errors for consistent code quality -->
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+
+    <!-- Enable deterministic builds -->
+    <ContinuousIntegrationBuild>true</ContinuousIntegrationBuild>
+
+    <!-- Enable source link for debugging -->
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+
+    <!-- Allow assembly attributes to be added -->
+    <GenerateAssemblyInfo>true</GenerateAssemblyInfo>
+
+    <!-- Company & version info -->
+    <Company>TTS Fixer</Company>
+    <Authors>Snuggless</Authors>
+    <Version>1.0.0</Version>
+    <RepositoryUrl>https://github.com/your-org/your-repo</RepositoryUrl>
+    <PackageLicenseExpression>GNU 3.0</PackageLicenseExpression>
+  </PropertyGroup>
+
+  <!-- Common NuGet packages for all projects -->
+  <ItemGroup>
+    <!-- Static code analysis -->
+    <PackageReference Include="Microsoft.CodeAnalysis.NetAnalyzers" Version="9.0.0" PrivateAssets="All" />
+    <PackageReference Include="StyleCop.Analyzers" Version="1.2.0-beta.435" PrivateAssets="All" />
+  </ItemGroup>
+
+  <!-- Analyzer configuration -->
+  <PropertyGroup>
+    <!-- StyleCop settings -->
+    <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
+    <AnalysisMode>AllEnabledByDefault</AnalysisMode>
+    <CodeAnalysisTreatWarningsAsErrors>true</CodeAnalysisTreatWarningsAsErrors>
+  </PropertyGroup>
+</Project>

@@ -1,0 +1,34 @@
+﻿@inherits LayoutComponentBase
+
+<MudThemeProvider IsDarkMode="true" />
+<MudPopoverProvider />
+<MudDialogProvider />
+<MudSnackbarProvider />
+
+<MudLayout Class="vh-100">
+    <MudAppBar>
+        <MudContainer MaxWidth="MaxWidth.Medium">
+            <MudStack Row="true" AlignItems="AlignItems.Center">
+                <MudText Typo="@Typo.h5">TTS Fixer</MudText>
+
+                <MudSpacer />
+
+                <MudIconButton Icon="@Icons.Custom.Brands.GitHub" />
+            </MudStack>
+        </MudContainer>
+    </MudAppBar>
+    <MudMainContent Class="h-100">
+        <MudContainer MaxWidth="MaxWidth.Medium" Class="h-100">
+            @Body
+        </MudContainer>
+    </MudMainContent>
+</MudLayout>
+
+@code {
+    bool _drawerOpen = false;
+
+    void DrawerToggle()
+    {
+        _drawerOpen = !_drawerOpen;
+    }
+}
