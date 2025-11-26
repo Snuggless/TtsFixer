@@ -18,17 +18,17 @@
                 Create and toggle text transformation rules to clean, normalize, and fix pronunciation before text-to-speech output.
             </MudText>
             <MudStack Row="true">
+                <MudFileUpload MaxFileSize="MaxFileSize" Disabled="@(File is not null)" T="IBrowserFile" Accept="@Accept" MaximumFileCount="1" Files="@File" OnFilesChanged="@OnInputFileChange">
+                    <ActivatorContent>
+                        <MudButton Variant="Variant.Filled"
+                                   Color="Color.Primary"
+                                   StartIcon="@Icons.Material.Filled.CloudUpload">
+                            Upload
+                        </MudButton>
+                    </ActivatorContent>
+                </MudFileUpload>
                 @if (File is null)
                 {
-                    <MudFileUpload T="IBrowserFile" Accept="@Accept" MaximumFileCount="1" Files="@File" OnFilesChanged="@OnInputFileChange">
-                        <ActivatorContent>
-                            <MudButton Variant="Variant.Filled"
-                                       Color="Color.Primary"
-                                       StartIcon="@Icons.Material.Filled.CloudUpload">
-                                Upload
-                            </MudButton>
-                        </ActivatorContent>
-                    </MudFileUpload>
                     <MudButton StartIcon="@Icons.Material.Filled.Add" Color="@Color.Secondary" Variant="@Variant.Outlined" @onclick="@OnAddClick">
                         Add Rule
                     </MudButton>
@@ -38,7 +38,7 @@
                     <MudButton StartIcon="@Icons.Material.Filled.RunCircle" Color="@Color.Success" Variant="@Variant.Filled" OnClick="@OnRunClick">
                         Run
                     </MudButton>
-                    <MudButton StartIcon="@Icons.Material.Filled.Cancel" Color="@Color.Error" Variant="@Variant.Outlined" OnClick="@OnCancelClick">
+                    <MudButton StartIcon="@Icons.Material.Filled.Cancel" Color="@Color.Secondary" Variant="@Variant.Outlined" OnClick="@OnCancelClick">
                         Cancel
                     </MudButton>
                 }
@@ -122,6 +122,7 @@
 
 @code {
     private const string Accept = ".txt";
+    private const long MaxFileSize = 10 * 1024 * 1024; // 10 MB
 
     private IBrowserFile? File { get; set; }
     private IEnumerable<CustomRule> CustomRules { get; set; } = [];
@@ -149,7 +150,7 @@
     {
         if (File is null) return;
 
-        using var stream = File.OpenReadStream();
+        using var stream = File.OpenReadStream(MaxFileSize);
         using var reader = new StreamReader(stream);
         var text = await reader.ReadToEndAsync();
 
