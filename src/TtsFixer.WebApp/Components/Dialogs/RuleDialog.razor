@@ -37,6 +37,16 @@
     [Parameter]
     public CustomRule Rule { get; set; } = default!;
 
+    protected override void OnInitialized()
+    {
+        base.OnInitialized();
+
+        if (Rule.Identifier == default)
+        {
+            Rule.Identifier = Guid.NewGuid();
+        }
+    }
+
     private void Close() => MudDialog.Close(DialogResult.Ok(true));
 
     private void OnValidSubmit()

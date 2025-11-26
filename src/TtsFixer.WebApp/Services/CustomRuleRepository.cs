@@ -11,9 +11,17 @@ namespace TtsFixer.WebApp.Services;
 /// <summary>
 /// IndexedDB-backed implementation of <see cref="IRuleRepository"/> for Blazor WebAssembly using JS interop.
 /// </summary>
-internal sealed class CustomRuleRepository : IRuleRepository
+internal sealed class CustomRuleRepository : IRuleRepository, IAsyncDisposable
 {
+    /// <summary>
+    /// The JS runtime for interop calls.
+    /// </summary>
     private readonly IJSRuntime _jsRuntime;
+
+    /// <summary>
+    /// The logger instance.
+    /// </summary>
+    private readonly ILogger<CustomRuleRepository> _logger;
 
     /// <summary>
     /// Local cache for rules to satisfy the synchronous interface.
@@ -21,16 +29,28 @@ internal sealed class CustomRuleRepository : IRuleRepository
     private readonly List<CustomRule> _cache = [];
 
     /// <summary>
+    /// The JS object reference for IndexedDB operations.
+    /// </summary>
+    private IJSObjectReference? _jSObjectReference;
+
+    /// <summary>
     /// Initializes a new instance of the <see cref="CustomRuleRepository"/> class.
     /// Loads existing rules from IndexedDB into the local cache.
     /// </summary>
     /// <param name="jsRuntime">The JS runtime.</param>
-    public CustomRuleRepository(IJSRuntime jsRuntime)
+    /// <param name="logger">The logger instance.</param>
+    public CustomRuleRepository(IJSRuntime jsRuntime, ILogger<CustomRuleRepository> logger)
     {
         this._jsRuntime = jsRuntime;
+        this._logger = logger;
 
-        // Initialize cache from IndexedDB (fire-and-forget)
-        _ = this.LoadAllAsync();
+        _ = this.LoadAllAsync().ConfigureAwait(false);
+    }
+
+    /// <inheritdoc/>
+    public ValueTask DisposeAsync()
+    {
+        return this._jSObjectReference is not null ? this._jSObjectReference.DisposeAsync() : ValueTask.CompletedTask;
     }
 
     /// <inheritdoc />
@@ -62,21 +82,26 @@ internal sealed class CustomRuleRepository : IRuleRepository
         _ = this.DeleteAsync(key);
     }
 
+    private async Task EnsureModuleAsync()
+    {
+        this._jSObjectReference ??= await this._jsRuntime.InvokeAsync<IJSObjectReference>("import", "./indexedDb.js");
+    }
+
     private async Task LoadAllAsync()
     {
         try
         {
-            var module = await this._jsRuntime.InvokeAsync<IJSObjectReference>("import", "./indexedDb.js");
-            var items = await module.InvokeAsync<CustomRule []>("getAll");
+            await this.EnsureModuleAsync();
+            var items = await this._jSObjectReference!.InvokeAsync<CustomRule []>("getAll");
             this._cache.Clear();
             if (items is not null && items.Length > 0)
             {
                 this._cache.AddRange(items);
             }
         }
-        catch (JSException)
+        catch (JSException ex)
         {
-            // Ignore failures; cache stays as-is.
+            this._logger.LogError(ex, "Error loading rules");
         }
     }
 
@@ -84,12 +109,11 @@ internal sealed class CustomRuleRepository : IRuleRepository
     {
         try
         {
-            var module = await this._jsRuntime.InvokeAsync<IJSObjectReference>("import", "./indexedDb.js");
-            await module.InvokeVoidAsync("upsert", rule);
+            await this._jSObjectReference!.InvokeVoidAsync("upsert", rule);
         }
-        catch (JSException)
+        catch (JSException ex)
         {
-            // Swallow exceptions to keep sync API simple
+            this._logger.LogError(ex, "Error upserting rule");
         }
     }
 
@@ -97,11 +121,11 @@ internal sealed class CustomRuleRepository : IRuleRepository
     {
         try
         {
-            var module = await this._jsRuntime.InvokeAsync<IJSObjectReference>("import", "./indexedDb.js");
-            await module.InvokeVoidAsync("remove", id);
+            await this._jSObjectReference!.InvokeVoidAsync("remove", id);
         }
-        catch (JSException)
+        catch (JSException ex)
         {
+            this._logger.LogError(ex, "Error deleting rule");
         }
     }
 }
