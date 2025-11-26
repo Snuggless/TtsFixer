@@ -4,6 +4,7 @@
 
 @inject IRuleRepository RuleRepository
 @inject IDialogService DialogService
+@inject ITextNormalizer TextNormalizer
 
 <PageTitle>TTS Fixer</PageTitle>
 
@@ -147,6 +148,8 @@
 
         using var reader = new StreamReader(content);
         var text = reader.ReadToEnd();
+
+        var normalizedText = TextNormalizer.Normalize(text);
     }
 
     private async void OnDeleteClick(CustomRule rule)
