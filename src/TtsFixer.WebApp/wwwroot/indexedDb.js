@@ -1,22 +1,30 @@
 const dbName = 'TtsFixerDb';
 const storeName = 'customRules';
-const dbVersion = 1;
+const dbVersion = 2;
 
 function openDb() {
   return new Promise((resolve, reject) => {
     const req = indexedDB.open(dbName, dbVersion);
     req.onupgradeneeded = (event) => {
       const db = event.target.result;
+      const oldVersion = event.oldVersion;
+      
+      // Delete old store if it exists (migration from v1)
+      if (oldVersion < 2 && db.objectStoreNames.contains(storeName)) {
+        db.deleteObjectStore(storeName);
+      }
+      
+      // Create new store with correct schema
       if (!db.objectStoreNames.contains(storeName)) {
-        const store = db.createObjectStore(storeName, { keyPath: 'Identifier' });
-        store.createIndex('Name', 'Name', { unique: false });
-        store.createIndex('Prioity', 'Prioity', { unique: false });
-        store.createIndex('IsEnabled', 'IsEnabled', { unique: false });
-        store.createIndex('UseRegex', 'UseRegex', { unique: false });
-        store.createIndex('CaseSensetive', 'CaseSensetive', { unique: false });
-        store.createIndex('Pattern', 'Pattern', { unique: false });
-        store.createIndex('Replacement', 'Replacement', { unique: false });
-        store.createIndex('CreatedAt', 'CreatedAt', { unique: false });
+        const store = db.createObjectStore(storeName, { keyPath: 'identifier' });
+        store.createIndex('Name', 'name', { unique: false });
+        store.createIndex('Prioity', 'prioity', { unique: false });
+        store.createIndex('IsEnabled', 'isEnabled', { unique: false });
+        store.createIndex('UseRegex', 'useRegex', { unique: false });
+        store.createIndex('CaseSensetive', 'caseSensetive', { unique: false });
+        store.createIndex('Pattern', 'pattern', { unique: false });
+        store.createIndex('Replacement', 'replacement', { unique: false });
+        store.createIndex('CreatedAt', 'createdAt', { unique: false });
       }
     };
     req.onsuccess = () => resolve(req.result);
