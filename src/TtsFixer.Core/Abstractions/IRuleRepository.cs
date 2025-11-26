@@ -15,15 +15,22 @@ public interface IRuleRepository
     /// <summary>
     /// Retrieves a collection of custom rules.
     /// </summary>
-    /// <returns>An <see cref="IEnumerable{T}"/> of <see cref="CustomRule"/> objects representing the custom rules. The
-    /// collection may be empty if no rules are defined.</returns>
-    IEnumerable<CustomRule> GetRules();
+    /// <returns>A <see cref="Task"/> representing the asynchronous operation, with a result of an <see cref="IEnumerable{T}"/> of <see cref="CustomRule"/> objects representing the custom rules.</returns>
+    Task<IEnumerable<CustomRule>> GetAsync();
+
+    /// <summary>
+    /// Adds a custom rule to the current configuration.
+    /// </summary>
+    /// <param name="rule">The custom rule to add. Cannot be null.</param>
+    /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
+    Task CreateAsync(CustomRule rule);
 
     /// <summary>
     /// Asynchronously sets a custom rule for processing.
     /// </summary>
     /// <param name="rule">The custom rule to be applied. Cannot be <see langword="null"/>.</param>
-    void SetRule(CustomRule rule);
+    /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
+    Task UpdateAsync(CustomRule rule);
 
     /// <summary>
     /// Removes the rule associated with the specified key.
@@ -31,5 +38,6 @@ public interface IRuleRepository
     /// <remarks>If no rule is found with the specified key, the method completes without throwing an
     /// exception.</remarks>
     /// <param name="key">The unique identifier of the rule to be removed.</param>
-    void RemoveRule(Guid key);
+    /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
+    Task RemoveAsync(Guid key);
 }

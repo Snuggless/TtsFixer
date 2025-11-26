@@ -35,7 +35,18 @@ export async function getAll() {
   });
 }
 
-export async function upsert(rule) {
+export async function add(rule) {
+  const db = await openDb();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(storeName, 'readwrite');
+    const store = tx.objectStore(storeName);
+    const req = store.add(rule);
+    req.onsuccess = () => resolve(true);
+    req.onerror = () => reject(req.error);
+  });
+}
+
+export async function update(rule) {
   const db = await openDb();
   return new Promise((resolve, reject) => {
     const tx = db.transaction(storeName, 'readwrite');

@@ -2,8 +2,6 @@
 
 @using System.Diagnostics.CodeAnalysis
 
-@inject IRuleRepository RuleRepository
-
 <EditForm Model="@Rule" OnValidSubmit="@OnValidSubmit" Enhance="true" FormName="add-rule-form">
     <MudDialog>
         <DialogContent>
@@ -55,8 +53,6 @@
         {
             Rule.Identifier = Guid.NewGuid();
         }
-
-        RuleRepository.SetRule(Rule);
 
         this.Close();
     }

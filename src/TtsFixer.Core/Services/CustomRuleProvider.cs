@@ -38,7 +38,10 @@ public class CustomRuleProvider : ITextNormalizationRule
     /// <inheritdoc/>
     public string Apply(string inputText)
     {
-        var rules = this._repository.GetRules()
+        var rules = this._repository.GetAsync()
+            .ConfigureAwait(false)
+            .GetAwaiter()
+            .GetResult()
             .OrderBy(x => x.Prioity);
 
         var output = inputText;

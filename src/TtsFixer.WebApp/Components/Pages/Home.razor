@@ -44,7 +44,7 @@
     </MudPaper>
 
     <MudElement HtmlTag="div" Class="h-100">
-        @foreach (var item in RuleRepository.GetRules())
+        @foreach (var item in CustomRules)
         {
             <MudCard Class="mb-2">
                 <MudCardHeader>
@@ -120,6 +120,13 @@
     private const string Accept = ".txt";
 
     private IBrowserFile? File { get; set; }
+    private IEnumerable<CustomRule> CustomRules { get; set; } = [];
+
+    override protected async Task OnInitializedAsync()
+    {
+        await base.OnInitializedAsync();
+        CustomRules = await RuleRepository.GetAsync();
+    }
 
     private void OnInputFileChange(InputFileChangeEventArgs e)
     {
@@ -128,7 +135,8 @@
     }
 
     private void OnCancelClick()
-    {        File = null;
+    {
+        File = null;
         StateHasChanged();
     }
 
@@ -137,7 +145,8 @@
         var content = File!.OpenReadStream();
 
         using var reader = new StreamReader(content);
-        var text = reader.ReadToEnd();    }
+        var text = reader.ReadToEnd();
+    }
 
     private async void OnEditClick(CustomRule rule)
     {
@@ -155,17 +164,19 @@
         };
 
         var dialog = await DialogService.ShowAsync<RuleDialog>("Add Rule", parameters, options);
-
-        await dialog.Result;
+        _ = await dialog.Result;
+        await RuleRepository.UpdateAsync(rule);
+        CustomRules = await RuleRepository.GetAsync();
 
         StateHasChanged();
     }
 
     private async void OnAddClick()
     {
+        var newRule = new CustomRule { Identifier = Guid.NewGuid() };
         var parameters = new DialogParameters
         {
-            { nameof(RuleDialog.Rule), new CustomRule { Identifier = Guid.NewGuid() } }
+            { nameof(RuleDialog.Rule), newRule }
         };
 
         var options = new DialogOptions
@@ -177,8 +188,9 @@
         };
 
         var dialog = await DialogService.ShowAsync<RuleDialog>("Add Rule", parameters, options);
-
-        await dialog.Result;
+        _ = await dialog.Result;
+        await RuleRepository.CreateAsync(newRule);
+        CustomRules = await RuleRepository.GetAsync();
 
         StateHasChanged();
     }

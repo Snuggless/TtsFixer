@@ -43,8 +43,6 @@ internal sealed class CustomRuleRepository : IRuleRepository, IAsyncDisposable
     {
         this._jsRuntime = jsRuntime;
         this._logger = logger;
-
-        _ = this.LoadAllAsync().ConfigureAwait(false);
     }
 
     /// <inheritdoc/>
@@ -54,40 +52,7 @@ internal sealed class CustomRuleRepository : IRuleRepository, IAsyncDisposable
     }
 
     /// <inheritdoc />
-    public IEnumerable<CustomRule> GetRules()
-    {
-        return this._cache;
-    }
-
-    /// <inheritdoc />
-    public void SetRule(CustomRule rule)
-    {
-        var existingIndex = this._cache.FindIndex(r => r.Identifier == rule.Identifier);
-        if (existingIndex >= 0)
-        {
-            this._cache [existingIndex] = rule;
-        }
-        else
-        {
-            this._cache.Add(rule);
-        }
-
-        _ = this.UpsertAsync(rule);
-    }
-
-    /// <inheritdoc />
-    public void RemoveRule(Guid key)
-    {
-        this._cache.RemoveAll(r => r.Identifier == key);
-        _ = this.DeleteAsync(key);
-    }
-
-    private async Task EnsureModuleAsync()
-    {
-        this._jSObjectReference ??= await this._jsRuntime.InvokeAsync<IJSObjectReference>("import", "./indexedDb.js");
-    }
-
-    private async Task LoadAllAsync()
+    public async Task<IEnumerable<CustomRule>> GetAsync()
     {
         try
         {
@@ -103,29 +68,61 @@ internal sealed class CustomRuleRepository : IRuleRepository, IAsyncDisposable
         {
             this._logger.LogError(ex, "Error loading rules");
         }
+
+        return this._cache;
     }
 
-    private async Task UpsertAsync(CustomRule rule)
+    /// <inheritdoc />
+    public async Task CreateAsync(CustomRule rule)
     {
+        this._cache.Add(rule);
+
         try
         {
-            await this._jSObjectReference!.InvokeVoidAsync("upsert", rule);
+            await this.EnsureModuleAsync();
+            await this._jSObjectReference!.InvokeVoidAsync("add", rule);
         }
         catch (JSException ex)
         {
-            this._logger.LogError(ex, "Error upserting rule");
+            this._logger.LogError(ex, "Error adding rule");
         }
     }
 
-    private async Task DeleteAsync(Guid id)
+    /// <inheritdoc />
+    public async Task UpdateAsync(CustomRule rule)
+    {
+        var existingIndex = this._cache.FindIndex(r => r.Identifier == rule.Identifier);
+        this._cache [existingIndex] = rule;
+
+        try
+        {
+            await this.EnsureModuleAsync();
+            await this._jSObjectReference!.InvokeVoidAsync("update", rule);
+        }
+        catch (JSException ex)
+        {
+            this._logger.LogError(ex, "Error updating rule");
+        }
+    }
+
+    /// <inheritdoc />
+    public async Task RemoveAsync(Guid key)
     {
         try
         {
-            await this._jSObjectReference!.InvokeVoidAsync("remove", id);
+            this._cache.RemoveAll(r => r.Identifier == key);
+
+            await this.EnsureModuleAsync();
+            await this._jSObjectReference!.InvokeVoidAsync("remove", key);
         }
         catch (JSException ex)
         {
             this._logger.LogError(ex, "Error deleting rule");
         }
+    }
+
+    private async Task EnsureModuleAsync()
+    {
+        this._jSObjectReference ??= await this._jsRuntime.InvokeAsync<IJSObjectReference>("import", "./indexedDb.js");
     }
 }
