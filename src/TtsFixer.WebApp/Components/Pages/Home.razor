@@ -5,6 +5,7 @@
 @inject IRuleRepository RuleRepository
 @inject IDialogService DialogService
 @inject ITextNormalizer TextNormalizer
+@inject DownloadService DownloadService
 
 <PageTitle>TTS Fixer</PageTitle>
 
@@ -142,14 +143,20 @@
         StateHasChanged();
     }
 
-    private void OnRunClick()
+    private async Task OnRunClick()
     {
-        var content = File!.OpenReadStream();
+        if (File is null) return;
 
-        using var reader = new StreamReader(content);
-        var text = reader.ReadToEnd();
+        using var stream = File.OpenReadStream();
+        using var reader = new StreamReader(stream);
+        var text = await reader.ReadToEndAsync();
 
         var normalizedText = TextNormalizer.Normalize(text);
+
+        await DownloadService.DownloadAsync(File!.Name, normalizedText);
+
+        File = null;
+        StateHasChanged();
     }
 
     private async void OnDeleteClick(CustomRule rule)
