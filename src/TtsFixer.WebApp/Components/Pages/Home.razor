@@ -60,7 +60,8 @@
 
                         <MudSpacer />
 
-                        <MudIconButton Icon="@Icons.Material.Outlined.Edit" Variant="@Variant.Text" Color="@Color.Tertiary" OnClick="@(() => OnEditClick(item))"/>
+                        <MudIconButton Icon="@Icons.Material.Outlined.Edit" Variant="@Variant.Text" Color="@Color.Default" OnClick="@(() => OnEditClick(item))" />
+                        <MudIconButton Icon="@Icons.Material.Outlined.Delete" Variant="@Variant.Text" Color="@Color.Default" OnClick="@(() => OnDeleteClick(item))" />
                     </MudStack>
                 </MudCardHeader>
 
@@ -148,6 +149,13 @@
         var text = reader.ReadToEnd();
     }
 
+    private async void OnDeleteClick(CustomRule rule)
+    {
+        await RuleRepository.RemoveAsync(rule.Identifier);
+
+        StateHasChanged();
+    }
+
     private async void OnEditClick(CustomRule rule)
     {
         var parameters = new DialogParameters
@@ -166,7 +174,6 @@
         var dialog = await DialogService.ShowAsync<RuleDialog>("Add Rule", parameters, options);
         _ = await dialog.Result;
         await RuleRepository.UpdateAsync(rule);
-        CustomRules = await RuleRepository.GetAsync();
 
         StateHasChanged();
     }
@@ -190,7 +197,6 @@
         var dialog = await DialogService.ShowAsync<RuleDialog>("Add Rule", parameters, options);
         _ = await dialog.Result;
         await RuleRepository.CreateAsync(newRule);
-        CustomRules = await RuleRepository.GetAsync();
 
         StateHasChanged();
     }
