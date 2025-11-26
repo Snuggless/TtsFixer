@@ -14,44 +14,136 @@
             <MudText Typo="Typo.body2" Class="text-secondary px-8 py-4">
                 Create and toggle text transformation rules to clean, normalize, and fix pronunciation before text-to-speech output.
             </MudText>
-            <MudFileUpload T="IBrowserFile">
-                <ActivatorContent>
-                    <MudButton Variant="Variant.Filled"
-                               Color="Color.Primary"
-                               StartIcon="@Icons.Material.Filled.CloudUpload">
-                        Upload
+            <MudStack Row="true">
+                @if (File is null)
+                {
+                    <MudFileUpload T="IBrowserFile" Accept="@Accept" MaximumFileCount="1" Files="@File" OnFilesChanged="@OnInputFileChange">
+                        <ActivatorContent>
+                            <MudButton Variant="Variant.Filled"
+                                       Color="Color.Primary"
+                                       StartIcon="@Icons.Material.Filled.CloudUpload">
+                                Upload
+                            </MudButton>
+                        </ActivatorContent>
+                    </MudFileUpload>
+                    <MudButton StartIcon="@Icons.Material.Filled.Add" Color="@Color.Secondary" Variant="@Variant.Outlined" @onclick="@OnAddClick">
+                        Add Rule
                     </MudButton>
-                </ActivatorContent>
-            </MudFileUpload>
+                }
+                else
+                {
+                    <MudButton StartIcon="@Icons.Material.Filled.RunCircle" Color="@Color.Success" Variant="@Variant.Filled" OnClick="@OnRunClick">
+                        Run
+                    </MudButton>
+                    <MudButton StartIcon="@Icons.Material.Filled.Cancel" Color="@Color.Error" Variant="@Variant.Outlined" OnClick="@OnCancelClick">
+                        Cancel
+                    </MudButton>
+                }
+            </MudStack>
         </MudStack>
     </MudPaper>
 
-    <MudToolBar>
-
-    </MudToolBar>
     <MudElement HtmlTag="div" Class="h-100">
-        @foreach(var item in Items)
+        @foreach (var item in RuleRepository.GetRules())
         {
-            
+            <MudCard Class="mb-2">
+                <MudCardHeader>
+                    <MudStack Spacing="1" Justify="Justify.SpaceBetween" Row="true" Style="width: 100% !important">
+                        <MudStack Row="false" Spacing="1">
+                            <MudText Typo="@Typo.h6">
+                                @item.Name
+                            </MudText>
+                            <MudText Typo="@Typo.body2">
+                                @item.Description
+                            </MudText>
+                        </MudStack>
+
+                        <MudSpacer />
+
+                        <MudIconButton Icon="@Icons.Material.Outlined.Edit" Variant="@Variant.Text" Color="@Color.Tertiary" OnClick="@(() => OnEditClick(item))"/>
+                    </MudStack>
+                </MudCardHeader>
+
+                <MudCardContent>
+                    <MudGrid Spacing="2">
+                        <MudItem xs="12" md="6">
+                            <MudStack Row="false" Spacing="1">
+                                <MudStack Row="true" Justify="Justify.Center">
+                                    <MudText Typo="Typo.body2" Color="Color.Primary">
+                                        Pattern
+                                    </MudText>
+                                </MudStack>
+                                <MudChip T="string" Variant="Variant.Outlined" Color="Color.Primary">
+                                    @item.Pattern
+                                </MudChip>
+                            </MudStack>
+                        </MudItem>
+                        <MudItem xs="12" md="6">
+                            <MudStack Row="false" Spacing="1">
+                                <MudStack Row="true" Justify="Justify.Center">
+                                    <MudText Typo="Typo.body2" Color="Color.Secondary">
+                                        Replacement
+                                    </MudText>
+                                </MudStack>
+                                <MudChip T="string" Variant="Variant.Outlined" Color="Color.Secondary">
+                                    @item.Replacement
+                                </MudChip>
+                            </MudStack>
+                        </MudItem>
+                    </MudGrid>
+                </MudCardContent>  
+
+                <MudExpansionPanels Dense="true" Elevation="0" Class="pb-4">
+                    <MudExpansionPanel Text="Details">
+                        <MudStack Row="false" Spacing="1">
+                            <MudText Typo="Typo.caption" Color="Color.Secondary">
+                                Created: @item.CreatedAt.ToString("yyyy-MM-dd HH:mm")
+                            </MudText>
+                            <MudAlert Severity="Severity.Info" Variant="Variant.Outlined" Dense="true">
+                                Preview: applying this rule will replace occurrences of
+                                <MudText Color="Color.Info" Class="mx-1">"@item.Pattern"</MudText>
+                                with
+                                <MudText Color="Color.Primary" Class="mx-1">"@item.Replacement"</MudText>
+                                @(item.UseRegex ? "(regex)" : "(literal)")
+                                @(item.CaseSensetive ? ", case-sensitive" : ", case-insensitive")
+                            </MudAlert>
+                        </MudStack>
+                    </MudExpansionPanel>
+                </MudExpansionPanels>
+            </MudCard>
         }
     </MudElement>
 </MudStack>
 
+
 @code {
-    private IEnumerable<CustomRule> Items { get; set; } = [];
+    private const string Accept = ".txt";
 
-    protected override void OnInitialized()
+    private IBrowserFile? File { get; set; }
+
+    private void OnInputFileChange(InputFileChangeEventArgs e)
     {
-        base.OnInitialized();
-
-        Items = RuleRepository.GetRules();
+        File = e.File;
+        StateHasChanged();
     }
 
-    private async void AddRule()
+    private void OnCancelClick()
+    {        File = null;
+        StateHasChanged();
+    }
+
+    private void OnRunClick()
+    {
+        var content = File!.OpenReadStream();
+
+        using var reader = new StreamReader(content);
+        var text = reader.ReadToEnd();    }
+
+    private async void OnEditClick(CustomRule rule)
     {
         var parameters = new DialogParameters
         {
-            { "Rule", new CustomRule { Identifier = Guid.NewGuid() } }
+            { nameof(RuleDialog.Rule), rule }
         };
 
         var options = new DialogOptions
@@ -62,8 +154,32 @@
             BackdropClick = false,
         };
 
-        await DialogService.ShowAsync<RuleDialog>("Add Rule", parameters, options);
+        var dialog = await DialogService.ShowAsync<RuleDialog>("Add Rule", parameters, options);
 
-        Items = RuleRepository.GetRules();
+        await dialog.Result;
+
+        StateHasChanged();
+    }
+
+    private async void OnAddClick()
+    {
+        var parameters = new DialogParameters
+        {
+            { nameof(RuleDialog.Rule), new CustomRule { Identifier = Guid.NewGuid() } }
+        };
+
+        var options = new DialogOptions
+        {
+            CloseButton = true,
+            MaxWidth = MaxWidth.Small,
+            FullWidth = true,
+            BackdropClick = false,
+        };
+
+        var dialog = await DialogService.ShowAsync<RuleDialog>("Add Rule", parameters, options);
+
+        await dialog.Result;
+
+        StateHasChanged();
     }
 }

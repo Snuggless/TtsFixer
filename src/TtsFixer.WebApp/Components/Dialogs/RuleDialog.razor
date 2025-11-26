@@ -4,41 +4,42 @@
 
 @inject IRuleRepository RuleRepository
 
-<MudDialog>
-    <DialogContent>
-        <MudStack Spacing="2">
-            <MudTextField @bind-Value="@Rule.Name" Label="Name"/>
-            <MudTextField @bind-Value="@Rule.Description" Label="Description"/>
-            <MudNumericField @bind-Value="@Rule.Prioity" Label="Prioity"/>
+<EditForm Model="@Rule" OnValidSubmit="@OnValidSubmit" Enhance="true" FormName="add-rule-form">
+    <MudDialog>
+        <DialogContent>
+            <DataAnnotationsValidator />
+            <AntiforgeryToken />
+            <MudStack Spacing="2">
+                <MudTextField @bind-Value="@Rule.Name" For="@(() => Rule.Name)" Label="Name" />
+                <MudTextField @bind-Value="@Rule.Description" For="@(() => Rule.Description)" Label="Description" />
+                <MudNumericField @bind-Value="@Rule.Prioity" For="@(() => Rule.Prioity)" Label="Prioity" />
 
-            <MudStack Row="true">
-                <MudSwitch @bind-Value="@Rule.UseRegex" Label="Use Regex" ReadOnly="@Rule.CaseSensetive" />
-                <MudSwitch @bind-Value="@Rule.CaseSensetive" Label="Case Sensetive" ReadOnly="@Rule.UseRegex" />
+                <MudStack Row="true">
+                    <MudSwitch @bind-Value="@Rule.UseRegex" For="@(() => Rule.UseRegex)" Label="Use Regex" ReadOnly="@Rule.CaseSensetive" />
+                    <MudSwitch @bind-Value="@Rule.CaseSensetive" For="@(() => Rule.CaseSensetive)" Label="Case Sensetive" ReadOnly="@Rule.UseRegex" />
+                </MudStack>
+
+                <MudTextField @bind-Value="@Rule.Pattern" For="@(() => Rule.Pattern)" Label="Pattern" />
+                <MudTextField @bind-Value="@Rule.Replacement" For="@(() => Rule.Replacement)" Label="Replacement" />
             </MudStack>
-
-            <MudTextField @bind-Value="@Rule.Pattern" Label="Pattern" />
-            <MudTextField @bind-Value="@Rule.Replacement" Label="Replacement" />
-        </MudStack>
-    </DialogContent>
-    <DialogActions>
-        <MudButton OnClick="Close">Cancel</MudButton>
-        <MudButton Color="Color.Success" OnClick="Save">Save</MudButton>
-    </DialogActions>
-</MudDialog>
+        </DialogContent>
+        <DialogActions>
+            <MudButton OnClick="Close">Cancel</MudButton>
+            <MudButton Color="Color.Success" ButtonType="@ButtonType.Submit">Save</MudButton>
+        </DialogActions>
+    </MudDialog>
+</EditForm>
 
 @code {
     [CascadingParameter, AllowNull]
     private IMudDialogInstance MudDialog { get; set; }
 
     [Parameter]
-    public CustomRule Rule { get; set; } = new()
-    {
-        CreatedAt = DateTime.UtcNow,
-    };
+    public CustomRule Rule { get; set; } = default!;
 
     private void Close() => MudDialog.Close(DialogResult.Ok(true));
 
-    private void Save()
+    private void OnValidSubmit()
     {
         if (Rule.Identifier == default)
         {

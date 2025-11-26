@@ -2,39 +2,106 @@
 // Copyright (c) PlaceholderCompany. All rights reserved.
 // </copyright>
 
+using Microsoft.JSInterop;
 using TtsFixer.Core;
 using TtsFixer.Core.Abstractions;
 
 namespace TtsFixer.WebApp.Services;
 
 /// <summary>
-/// Provides functionality to manage a repository of custom rules, including retrieving, saving, and deleting rules.
+/// IndexedDB-backed implementation of <see cref="IRuleRepository"/> for Blazor WebAssembly using JS interop.
 /// </summary>
-/// <remarks>This class is designed to handle operations related to custom rules, such as retrieving all rules,
-/// saving new rules, and deleting existing rules by their unique identifier. It ensures encapsulation  of the rule
-/// storage and provides a simple API for interacting with the rules.</remarks>
 internal sealed class CustomRuleRepository : IRuleRepository
 {
+    private readonly IJSRuntime _jsRuntime;
+
     /// <summary>
-    /// Gets or sets the collection of custom rules used to define additional processing logic.
+    /// Local cache for rules to satisfy the synchronous interface.
     /// </summary>
-    private List<CustomRule> CustomRules { get; set; } = [];
+    private readonly List<CustomRule> _cache = [];
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="CustomRuleRepository"/> class.
+    /// Loads existing rules from IndexedDB into the local cache.
+    /// </summary>
+    /// <param name="jsRuntime">The JS runtime.</param>
+    public CustomRuleRepository(IJSRuntime jsRuntime)
+    {
+        this._jsRuntime = jsRuntime;
+
+        // Initialize cache from IndexedDB (fire-and-forget)
+        _ = this.LoadAllAsync();
+    }
 
     /// <inheritdoc />
     public IEnumerable<CustomRule> GetRules()
     {
-        return this.CustomRules;
-    }
-
-    /// <inheritdoc />
-    public void RemoveRule(Guid key)
-    {
-        this.CustomRules.RemoveAll(r => r.Identifier == key);
+        return this._cache;
     }
 
     /// <inheritdoc />
     public void SetRule(CustomRule rule)
     {
-        this.CustomRules.Add(rule);
+        var existingIndex = this._cache.FindIndex(r => r.Identifier == rule.Identifier);
+        if (existingIndex >= 0)
+        {
+            this._cache [existingIndex] = rule;
+        }
+        else
+        {
+            this._cache.Add(rule);
+        }
+
+        _ = this.UpsertAsync(rule);
+    }
+
+    /// <inheritdoc />
+    public void RemoveRule(Guid key)
+    {
+        this._cache.RemoveAll(r => r.Identifier == key);
+        _ = this.DeleteAsync(key);
+    }
+
+    private async Task LoadAllAsync()
+    {
+        try
+        {
+            var module = await this._jsRuntime.InvokeAsync<IJSObjectReference>("import", "./indexedDb.js");
+            var items = await module.InvokeAsync<CustomRule []>("getAll");
+            this._cache.Clear();
+            if (items is not null && items.Length > 0)
+            {
+                this._cache.AddRange(items);
+            }
+        }
+        catch (JSException)
+        {
+            // Ignore failures; cache stays as-is.
+        }
+    }
+
+    private async Task UpsertAsync(CustomRule rule)
+    {
+        try
+        {
+            var module = await this._jsRuntime.InvokeAsync<IJSObjectReference>("import", "./indexedDb.js");
+            await module.InvokeVoidAsync("upsert", rule);
+        }
+        catch (JSException)
+        {
+            // Swallow exceptions to keep sync API simple
+        }
+    }
+
+    private async Task DeleteAsync(Guid id)
+    {
+        try
+        {
+            var module = await this._jsRuntime.InvokeAsync<IJSObjectReference>("import", "./indexedDb.js");
+            await module.InvokeVoidAsync("remove", id);
+        }
+        catch (JSException)
+        {
+        }
     }
 }
