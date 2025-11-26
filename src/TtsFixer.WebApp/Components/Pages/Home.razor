@@ -6,6 +6,7 @@
 @inject IDialogService DialogService
 @inject ITextNormalizer TextNormalizer
 @inject DownloadService DownloadService
+@inject CustomRuleProvider CustomRuleProvider
 
 <PageTitle>TTS Fixer</PageTitle>
 
@@ -129,6 +130,7 @@
     {
         await base.OnInitializedAsync();
         CustomRules = await RuleRepository.GetAsync();
+        CustomRuleProvider.Initialize(RuleRepository);
     }
 
     private void OnInputFileChange(InputFileChangeEventArgs e)

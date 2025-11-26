@@ -15,30 +15,32 @@ namespace TtsFixer.Core.Services;
 /// the order of the rule and the logic for applying the rule to a given input text.</remarks>
 public class CustomRuleProvider : ITextNormalizationRule
 {
-    /// <summary>
-    /// Represents the repository used to manage and retrieve custom rules.
-    /// </summary>
-    /// <remarks>This field is read-only and is intended to store an instance of <see
-    /// cref="IRuleRepository"/>  for use within the containing class. It provides access to custom rule data and
-    /// operations.</remarks>
-    private readonly IRuleRepository _repository;
-
-    /// <summary>
-    /// Initializes a new instance of the <see cref="CustomRuleProvider"/> class with the specified repository.
-    /// </summary>
-    /// <param name="repository">The repository used to retrieve and manage custom rules. Cannot be <see langword="null"/>.</param>
-    public CustomRuleProvider(IRuleRepository repository)
-    {
-        this._repository = repository;
-    }
-
     /// <inheritdoc/>
     public int Order => 1;
+
+    /// <summary>
+    /// Gets or sets the repository used to manage and retrieve rules.
+    /// </summary>
+    private IRuleRepository? RuleRepository { get; set; }
+
+    /// <summary>
+    /// Initializes the instance with the specified rule repository.
+    /// </summary>
+    /// <param name="ruleRepository">The rule repository to associate with this instance. Cannot be null.</param>
+    public void Initialize(IRuleRepository ruleRepository)
+    {
+        this.RuleRepository = ruleRepository;
+    }
 
     /// <inheritdoc/>
     public string Apply(string inputText)
     {
-        var rules = this._repository.GetAsync()
+        if (this.RuleRepository is null)
+        {
+            throw new InvalidOperationException("RuleRepository is not initialized.");
+        }
+
+        var rules = this.RuleRepository.GetAsync()
             .ConfigureAwait(false)
             .GetAwaiter()
             .GetResult()
