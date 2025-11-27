@@ -185,7 +185,7 @@
             BackdropClick = false,
         };
 
-        var dialog = await DialogService.ShowAsync<RuleDialog>("Add Rule", parameters, options);
+        var dialog = await DialogService.ShowAsync<RuleDialog>("Edit Rule", parameters, options);
         _ = await dialog.Result;
         await RuleRepository.UpdateAsync(rule);
 
