@@ -51,6 +51,12 @@ internal sealed class CustomRuleRepository : IRuleRepository, IAsyncDisposable
         return this._jSObjectReference is not null ? this._jSObjectReference.DisposeAsync() : ValueTask.CompletedTask;
     }
 
+    /// <inheritdoc/>
+    public IEnumerable<CustomRule> GetCustomRules()
+    {
+        return this._cache;
+    }
+
     /// <inheritdoc />
     public async Task<IEnumerable<CustomRule>> GetAsync()
     {

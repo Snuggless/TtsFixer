@@ -21,13 +21,13 @@ public class CustomRuleProvider : ITextNormalizationRule
     /// <summary>
     /// Gets or sets the repository used to manage and retrieve rules.
     /// </summary>
-    private IRuleRepository? RuleRepository { get; set; }
+    private IRuleProvider? RuleRepository { get; set; }
 
     /// <summary>
     /// Initializes the instance with the specified rule repository.
     /// </summary>
     /// <param name="ruleRepository">The rule repository to associate with this instance. Cannot be null.</param>
-    public void Initialize(IRuleRepository ruleRepository)
+    public void Initialize(IRuleProvider ruleRepository)
     {
         this.RuleRepository = ruleRepository;
     }
@@ -40,11 +40,7 @@ public class CustomRuleProvider : ITextNormalizationRule
             throw new InvalidOperationException("RuleRepository is not initialized.");
         }
 
-        var rules = this.RuleRepository.GetAsync()
-            .ConfigureAwait(false)
-            .GetAwaiter()
-            .GetResult()
-            .OrderBy(x => x.Prioity);
+        var rules = this.RuleRepository.GetCustomRules();
 
         var output = inputText;
 

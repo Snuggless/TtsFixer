@@ -10,7 +10,7 @@ namespace TtsFixer.Core.Abstractions;
 /// </summary>
 /// <remarks>This interface is designed to support asynchronous operations for managing rules. Implementations of
 /// this interface should ensure thread safety and proper handling of concurrent access.</remarks>
-public interface IRuleRepository
+public interface IRuleRepository : IRuleProvider
 {
     /// <summary>
     /// Retrieves a collection of custom rules.
