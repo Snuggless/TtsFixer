@@ -123,7 +123,6 @@
 @code {
     private const string Accept = ".txt";
     private const long MaxFileSize = 10 * 1024 * 1024; // 10 MB
-    private const int ChunkSize = 100 * 1024; // 500 KB
 
     private IBrowserFile? File { get; set; }
     private IEnumerable<CustomRule> CustomRules { get; set; } = [];
@@ -155,9 +154,9 @@
         using var reader = new StreamReader(stream);
         var text = await reader.ReadToEndAsync();
 
-        var normalizedText = TextNormalizer.Normalize(text);
+        var output = TextNormalizer.Normalize(text);
 
-        await DownloadService.DownloadAsync(File!.Name, normalizedText);
+        await DownloadService.DownloadAsync(File!.Name, output);
 
         File = null;
         StateHasChanged();
@@ -186,8 +185,12 @@
         };
 
         var dialog = await DialogService.ShowAsync<RuleDialog>("Edit Rule", parameters, options);
-        _ = await dialog.Result;
-        await RuleRepository.UpdateAsync(rule);
+        var result = await dialog.Result;
+
+        if (result?.Data is CustomRule customRule)
+        {
+            await RuleRepository.UpdateAsync(customRule);
+        }
 
         StateHasChanged();
     }
@@ -209,8 +212,12 @@
         };
 
         var dialog = await DialogService.ShowAsync<RuleDialog>("Add Rule", parameters, options);
-        _ = await dialog.Result;
-        await RuleRepository.CreateAsync(newRule);
+        var result = await dialog.Result;
+
+        if (result?.Data is CustomRule customRule)
+        {
+            await RuleRepository.CreateAsync(customRule);
+        }
 
         StateHasChanged();
     }

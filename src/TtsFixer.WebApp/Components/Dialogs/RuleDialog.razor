@@ -45,7 +45,7 @@
         }
     }
 
-    private void Close() => MudDialog.Close(DialogResult.Ok(true));
+    private void Close() => MudDialog.Close(DialogResult.Ok<CustomRule?>(null));
 
     private void OnValidSubmit()
     {
@@ -54,6 +54,6 @@
             Rule.Identifier = Guid.NewGuid();
         }
 
-        this.Close();
+        MudDialog.Close(DialogResult.Ok<CustomRule?>(Rule));
     }
 }
